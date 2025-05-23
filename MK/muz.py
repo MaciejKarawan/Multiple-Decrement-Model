@@ -374,11 +374,109 @@ def calculate_premium(model, sex, x, n, benefits, proportions, params, ttz_data=
     """
     # Obliczenie A (oczekiwanej wartości wypłaty)
     A_value = calculate_A(model, sex, x, n, benefits, proportions, params, ttz_data)
-
     # Obliczenie a (wartości obecnej przyszłych składek)
     a_value = calculate_a(model, sex, x, n, params, ttz_data)
-
     # Obliczenie wysokości składki
     premium = A_value / a_value
-
     return premium, A_value, a_value
+
+
+def calculate_reserves(model, sex, x, n, benefits, premium, proportions, params, ttz_data=None):
+    """
+    ...
+    """
+    Reserves = np.zeros(n+1)
+    for j in range(n-1, -1, -1):
+        if model == 'A':
+            mu = params[sex]['A']['mu']
+            # Prawdopodobieństwo śmierci x+j latka w ciągu roku z poszczególnych przyczyn
+            q_n = death_prob_A_year(j, mu, proportions['n'])
+            q_w = death_prob_A_year(j, mu, proportions['w'])
+            q_c = death_prob_A_year(j, mu, proportions['c'])
+            # prawdopodobieństwo przeżycia roku przez x+j latka
+            pt = 1 - q_n - q_w - q_c
+            # print(pt)
+        elif model == 'B':
+            model_params = params[sex]['B']
+            # Prawdopodobieństwo śmierci x+j latka w ciągu roku z poszczególnych przyczyn
+            q_n = death_prob_B_year(0, x+j, model_params, proportions['n'])
+            q_w = death_prob_B_year(0, x+j, model_params, proportions['w'])
+            q_c = death_prob_B_year(0, x+j, model_params, proportions['c'])
+            # prawdopodobieństwo przeżycia roku przez x+j latka
+            pt = 1 - q_n - q_w - q_c
+            # print(pt)
+
+        elif model == 'C':
+            # Prawdopodobieństwo śmierci x+j latka w ciągu roku z poszczególnych przyczyn
+            q_n = death_prob_C_year(0, x+j, ttz_data, proportions['n'])
+            q_w = death_prob_C_year(0, x+j, ttz_data, proportions['w'])
+            q_c = death_prob_C_year(0, x+j, ttz_data, proportions['c'])
+            # prawdopodobieństwo przeżycia roku przez x+j latka
+            pt = 1 - q_n - q_w - q_c
+            # print(pt)
+
+        # Wartość rezerwy w następnym roku trwania ubezpieczenia
+
+
+
+        V_prev = v*(benefits['n'] * q_n + benefits['w'] * q_w + benefits['c'] * q_c) - premium + v * pt * Reserves[j+1]
+        Reserves[j] = V_prev
+
+    # print(Reserves)
+    return Reserves
+
+
+
+def visualize_reserves(model_name, sex, reserves, save_path=None):
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(len(reserves)), reserves, label='Men')
+    plt.xlabel('Years')
+    plt.ylabel('Reserve Value')
+    plt.title(f'Insurance Reserve Over Time by for {sex} in {model_name} Model')
+    plt.legend()
+    plt.grid(True)
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Wykres zapisany do: {save_path}")
+
+    plt.show()
+
+def calculate_risk_premium(model, sex, x, n, benefits, proportions, params, reserves, ttz_data=None):
+    risk_premium_values = []
+    for j in range(n):
+        if model == 'A':
+            mu = params[sex]['A']['mu']
+            # Prawdopodobieństwo śmierci x+j latka w ciągu roku z poszczególnych przyczyn
+            q_n = death_prob_A_year(0, mu, proportions['n'])
+            q_w = death_prob_A_year(0, mu, proportions['w'])
+            q_c = death_prob_A_year(0, mu, proportions['c'])
+            # prawdopodobieństwo przeżycia roku przez x+j latka
+            pt = 1 - q_n - q_w - q_c
+            # print(pt)
+        elif model == 'B':
+            model_params = params[sex]['B']
+            # Prawdopodobieństwo śmierci x+j latka w ciągu roku z poszczególnych przyczyn
+            q_n = death_prob_B_year(0, x+j, model_params, proportions['n'])
+            q_w = death_prob_B_year(0, x+j, model_params, proportions['w'])
+            q_c = death_prob_B_year(0, x+j, model_params, proportions['c'])
+            # prawdopodobieństwo przeżycia roku przez x+j latka
+            pt = 1 - q_n - q_w - q_c
+            # print(pt)
+
+        elif model == 'C':
+            # Prawdopodobieństwo śmierci x+j latka w ciągu roku z poszczególnych przyczyn
+            q_n = death_prob_C_year(0, x+j, ttz_data, proportions['n'])
+            q_w = death_prob_C_year(0, x+j, ttz_data, proportions['w'])
+            q_c = death_prob_C_year(0, x+j, ttz_data, proportions['c'])
+            # prawdopodobieństwo przeżycia roku przez x+j latka
+            pt = 1 - q_n - q_w - q_c
+    for k in range(0, len(reserves)):
+        risk_premium_values.append(v*(benefits['n'] * q_n + benefits['w'] * q_w + benefits['c'] * q_c - reserves[k+1] * (q_n+q_w+q_c) ))
+    return risk_premium_values
+
+def calculate_savings_premium(premium, risk_premium_value):
+    return premium - risk_premium_value
+
+
+

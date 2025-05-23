@@ -72,7 +72,7 @@ def part2():
         'F': data_f
     }
 
-    '''# Obliczenie składek dla wszystkich modeli i płci
+    # Obliczenie składek dla wszystkich modeli i płci
     results = {}
 
     for sex in ['M', 'F']:
@@ -146,7 +146,7 @@ def part2():
                 f.write(f"    Wartość A: {A_value:.2f} zł\n")
                 f.write(f"    Wartość a: {a_value:.4f}\n\n")
 
-    print("\nWyniki zapisano do pliku 'wyniki_skladek_ABC.txt'")'''
+    print("\nWyniki zapisano do pliku 'wyniki_skladek_ABC.txt'")
 
     # Przykładowe przedziały wiekowe dla mężczyzn
     male_age_ranges = [
@@ -162,6 +162,18 @@ def part2():
     # Wizualizacja wielu fitów
     visualize_multi_fits(data_m, male_age_ranges, "mężczyźni", save_path="multi_fits_model_A_mezczyzni.png")
 
+    # for model in ['A', 'B', 'C']:
+    #     for sex in ['M', 'F']:
+    #         if model == 'C':
+    #             # print(results['M']['B']['A_value'] - results['M']['B']['premium']*results['M']['B']['a_value'])
+    #             reserves = calculate_reserves(model, sex, 25, 30, benefits, results['M']['B']['premium'], proportions,
+    #                                           params, ttz_data[sex])
+    #             visualize_reserves(model, sex, reserves, save_path=None)
+    #         else:
+    #             # print(results['M']['B']['A_value'] - results['M']['B']['premium'] * results['M']['B']['a_value'])
+    #             reserves = calculate_reserves(model, sex, 25, 30, benefits, results['M']['B']['premium'], proportions,
+    #                                           params)
+    #             visualize_reserves(model, sex, reserves, save_path=None)
 
 if __name__ == '__main__':
     part1()
