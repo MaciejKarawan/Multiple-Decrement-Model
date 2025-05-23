@@ -72,7 +72,7 @@ def part2():
         'F': data_f
     }
 
-    # Obliczenie składek dla wszystkich modeli i płci
+    '''# Obliczenie składek dla wszystkich modeli i płci
     results = {}
 
     for sex in ['M', 'F']:
@@ -146,8 +146,21 @@ def part2():
                 f.write(f"    Wartość A: {A_value:.2f} zł\n")
                 f.write(f"    Wartość a: {a_value:.4f}\n\n")
 
-    print("\nWyniki zapisano do pliku 'wyniki_skladek_ABC.txt'")
+    print("\nWyniki zapisano do pliku 'wyniki_skladek_ABC.txt'")'''
 
+    # Przykładowe przedziały wiekowe dla mężczyzn
+    male_age_ranges = [
+        (25, 55, "25 - 55"),
+        (20, 60, "20 - 60"),
+        (15, 65, "15 - 65"),
+    ]
+
+    # Estymacja parametru mu dla wybranego przedziału
+    mu = estimate_mu_on_interval(data_m, (25, 55), "mężczyzn")
+    print(f"Estymowany parametr μ dla przedziału (25 - 55): {mu:.8f}")
+
+    # Wizualizacja wielu fitów
+    visualize_multi_fits(data_m, male_age_ranges, "mężczyźni", save_path="multi_fits_model_A_mezczyzni.png")
 
 
 if __name__ == '__main__':

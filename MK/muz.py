@@ -111,6 +111,114 @@ def visualize_models(data, params, sex, save_path=None):
     plt.show()
 
 
+### Poprawka, dla modelu A estymowanego na konkretnym przedziale
+
+# Funkcja do estymacji parametru mu na wybranym przedziale wiekowym
+def estimate_mu_on_interval(data, age_range, sex_label):
+    """
+    Estymacja parametru mu modelu A na wybranym przedziale wiekowym
+
+    Parametry:
+    data - DataFrame z danymi TTŻ
+    age_range - krotka (min_age, max_age) określająca przedział wiekowy
+    sex_label - etykieta płci do wyświetlania (np. "mężczyźni", "kobiety")
+
+    Zwraca:
+    mu - estymowany parametr mu
+    """
+    min_age, max_age = age_range
+
+    # Filtrowanie danych do wybranego przedziału
+    mask = (data['age'] >= min_age) & (data['age'] <= max_age)
+    filtered_data = data[mask].copy()
+
+    if len(filtered_data) == 0:
+        raise ValueError(f"Brak danych w przedziale wiekowym {min_age}-{max_age}")
+
+    # Przygotowanie danych do kalibracji
+    ages = filtered_data['age'].values - min_age  # Przesunięcie wieku, aby zaczynał się od 0
+    l_values = filtered_data['l'].values
+
+    # Normalizacja l_values do funkcji przeżycia (l_x / l_0)
+    survival_values = l_values / l_values[0]
+
+    # Kalibracja modelu A
+    result_A = minimize(objective_A, x0=[0.01], args=(ages, survival_values),
+                        bounds=[(0.0001, 0.1)], method='L-BFGS-B')
+    mu_optimal = result_A.x[0]
+
+    print(f"Estymacja parametru μ dla {sex_label} w przedziale {min_age}-{max_age} lat:")
+    print(f"μ = {mu_optimal:.8f}")
+
+    return mu_optimal
+
+# Funkcja do wizualizacji wielu fitów modelu A na różnych przedziałach
+def visualize_multi_fits(data, age_ranges, sex_label, save_path=None):
+    """
+    Wizualizacja dopasowania modelu A na wielu przedziałach wiekowych
+
+    Parametry:
+    data - DataFrame z danymi TTŻ
+    age_ranges - lista krotek (min_age, max_age, label) określających przedziały wiekowe i ich etykiety
+    sex_label - etykieta płci do wyświetlania (np. "mężczyźni", "kobiety")
+    save_path - ścieżka do zapisania wykresu (opcjonalnie)
+    """
+    plt.figure(figsize=(10, 6))
+
+    # Pełne dane do porównania
+    full_ages = data['age'].values
+    full_l_values = data['l'].values
+    full_survival = full_l_values / full_l_values[0]
+
+    # Rysowanie oryginalnych danych
+    plt.plot(full_ages, full_survival, 'o', markersize=3, alpha=0.5, label='TTŻ 2023')
+
+    # Kolory dla różnych fitów
+    colors = plt.cm.tab10.colors
+
+    # Rysowanie fitów dla każdego przedziału
+    for i, (min_age, max_age, label) in enumerate(age_ranges):
+        # Filtrowanie danych do wybranego przedziału
+        mask = (data['age'] >= min_age) & (data['age'] <= max_age)
+        filtered_data = data[mask].copy()
+
+        if len(filtered_data) == 0:
+            print(f"Ostrzeżenie: Brak danych w przedziale {min_age}-{max_age}")
+            continue
+
+        # Przygotowanie danych do kalibracji
+        ages = filtered_data['age'].values - min_age  # Przesunięcie wieku, aby zaczynał się od 0
+        l_values = filtered_data['l'].values
+        survival_values = l_values / l_values[0]
+
+        # Estymacja parametru mu
+        mu = estimate_mu_on_interval(data, (min_age, max_age), sex_label)
+
+        # Generowanie przewidywań modelu A dla całego zakresu wieku
+        predicted_ages = np.arange(max_age - min_age + 1)
+        predicted_survival = np.array([model_A_survival(t, mu) for t in predicted_ages])
+
+        # Rysowanie dopasowania
+        plt.plot(predicted_ages + min_age, predicted_survival, '-',
+                 color=colors[i % len(colors)], linewidth=2,
+                 label=f'{label}: μ = {mu:.6f}')
+
+        # Zaznaczenie przedziału na wykresie
+        plt.axvspan(min_age, max_age, alpha=0.1, color=colors[i % len(colors)])
+
+    plt.title(f'Dopasowanie modelu A (stałe natężenie) dla różnych przedziałów wiekowych - {sex_label}')
+    plt.xlabel('Wiek')
+    plt.ylabel('Funkcja przeżycia S(x)')
+    plt.legend(loc='best')
+    plt.grid(True)
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Wykres zapisany do: {save_path}")
+
+    plt.show()
+
+
 ######### Funkcje pomocnicze do obliczania składki
 
 # Parametry ubezpieczenia
