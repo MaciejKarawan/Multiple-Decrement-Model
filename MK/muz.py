@@ -147,7 +147,7 @@ def estimate_mu_on_interval(data, age_range, sex_label):
                         bounds=[(0.0001, 0.1)], method='L-BFGS-B')
     mu_optimal = result_A.x[0]
 
-    print(f"Estymacja parametru μ dla {sex_label} w przedziale {min_age}-{max_age} lat:")
+    print(f"\nEstymacja parametru μ dla {sex_label} w przedziale {min_age}-{max_age} lat:")
     print(f"μ = {mu_optimal:.8f}")
 
     return mu_optimal
@@ -374,6 +374,33 @@ def calculate_premium(model, sex, x, n, benefits, proportions, params, ttz_data=
     """
     # Obliczenie A (oczekiwanej wartości wypłaty)
     A_value = calculate_A(model, sex, x, n, benefits, proportions, params, ttz_data)
+
+    # Obliczenie a (wartości obecnej przyszłych składek)
+    a_value = calculate_a(model, sex, x, n, params, ttz_data)
+
+    # Obliczenie wysokości składki
+    premium = A_value / a_value
+
+    return premium, A_value, a_value
+
+
+
+
+# Obliczenie wysokości składki
+def calculate_premium(model, sex, x, n, benefits, proportions, params, ttz_data=None):
+    """
+    Obliczenie wysokości składki
+    model - 'A', 'B' lub 'C'
+    sex - 'M' lub 'F'
+    x - wiek początkowy
+    n - okres ubezpieczenia
+    benefits - słownik z wypłatami dla różnych przyczyn śmierci
+    proportions - słownik z proporcjami natężenia śmiertelności
+    params - parametry modeli
+    ttz_data - dane TTŻ 2023 (tylko dla modelu C)
+    """
+    # Obliczenie A (oczekiwanej wartości wypłaty)
+    A_value = calculate_A(model, sex, x, n, benefits, proportions, params, ttz_data)
     # Obliczenie a (wartości obecnej przyszłych składek)
     a_value = calculate_a(model, sex, x, n, params, ttz_data)
     # Obliczenie wysokości składki
@@ -477,6 +504,5 @@ def calculate_risk_premium(model, sex, x, n, benefits, proportions, params, rese
 
 def calculate_savings_premium(premium, risk_premium_value):
     return premium - risk_premium_value
-
 
 
