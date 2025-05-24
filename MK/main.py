@@ -162,19 +162,41 @@ def part2():
     # Wizualizacja wielu fitów
     visualize_multi_fits(data_m, male_age_ranges, "mężczyźni", save_path="multi_fits_model_A_mezczyzni.png")
 
-    # for model in ['A', 'B', 'C']:
-    #     for sex in ['M', 'F']:
-    #         if model == 'C':
-    #             # print(results['M']['B']['A_value'] - results['M']['B']['premium']*results['M']['B']['a_value'])
-    #             reserves = calculate_reserves(model, sex, 25, 30, benefits, results['M']['B']['premium'], proportions,
-    #                                           params, ttz_data[sex])
-    #             visualize_reserves(model, sex, reserves, save_path=None)
-    #         else:
-    #             # print(results['M']['B']['A_value'] - results['M']['B']['premium'] * results['M']['B']['a_value'])
-    #             reserves = calculate_reserves(model, sex, 25, 30, benefits, results['M']['B']['premium'], proportions,
-    #                                           params)
-    #             visualize_reserves(model, sex, reserves, save_path=None)
-
 if __name__ == '__main__':
     part1()
     part2()
+    visualize_death_probs(
+        x=25,
+        n=30,
+        ttz_data={'M' : data_m, 'F' : data_f},
+        params=params,
+        proportions=proportions,
+        save_path='MK'
+    )
+    reserves_dict = build_reserves_dict(
+        x=25,
+        n=30,
+        benefits=benefits,
+        proportions=proportions,
+        params=params,
+        ttz_data={'M': data_m, 'F': data_f}
+    )
+
+    visualize_reserves_split(
+        x=25,
+        n=30,
+        reserves_dict=reserves_dict,
+        save_path_prefix='MK'
+    )
+
+    visualize_premiums_split(
+        x=25,
+        n=30,
+        benefits=benefits,
+        proportions=proportions,
+        params=params,
+        reserves_dict=reserves_dict,
+        ttz_data={'M': data_m, 'F': data_f},
+        save_path_prefix='MK'
+    )
+

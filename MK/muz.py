@@ -385,17 +385,20 @@ def calculate_reserves(model, sex, x, n, benefits, premium, proportions, params,
     """
     ...
     """
+    print(model)
+    print(premium)
     Reserves = np.zeros(n+1)
     for j in range(n-1, -1, -1):
         if model == 'A':
             mu = params[sex]['A']['mu']
             # Prawdopodobieństwo śmierci x+j latka w ciągu roku z poszczególnych przyczyn
-            q_n = death_prob_A_year(j, mu, proportions['n'])
-            q_w = death_prob_A_year(j, mu, proportions['w'])
-            q_c = death_prob_A_year(j, mu, proportions['c'])
+            q_n = proportions['n'] * (1 - np.exp(-mu))
+            q_w = proportions['w'] * (1 - np.exp(-mu))
+            q_c = proportions['c'] * (1 - np.exp(-mu))
+
             # prawdopodobieństwo przeżycia roku przez x+j latka
-            pt = 1 - q_n - q_w - q_c
-            # print(pt)
+            p = 1 - (q_n + q_w + q_c)
+
         elif model == 'B':
             model_params = params[sex]['B']
             # Prawdopodobieństwo śmierci x+j latka w ciągu roku z poszczególnych przyczyn
@@ -403,43 +406,60 @@ def calculate_reserves(model, sex, x, n, benefits, premium, proportions, params,
             q_w = death_prob_B_year(0, x+j, model_params, proportions['w'])
             q_c = death_prob_B_year(0, x+j, model_params, proportions['c'])
             # prawdopodobieństwo przeżycia roku przez x+j latka
-            pt = 1 - q_n - q_w - q_c
-            # print(pt)
-
+            p = 1 - (q_n + q_w + q_c)
         elif model == 'C':
             # Prawdopodobieństwo śmierci x+j latka w ciągu roku z poszczególnych przyczyn
             q_n = death_prob_C_year(0, x+j, ttz_data, proportions['n'])
             q_w = death_prob_C_year(0, x+j, ttz_data, proportions['w'])
             q_c = death_prob_C_year(0, x+j, ttz_data, proportions['c'])
             # prawdopodobieństwo przeżycia roku przez x+j latka
-            pt = 1 - q_n - q_w - q_c
-            # print(pt)
-
+            p = 1 - (q_n + q_w + q_c)
         # Wartość rezerwy w następnym roku trwania ubezpieczenia
 
-
-
-        V_prev = v*(benefits['n'] * q_n + benefits['w'] * q_w + benefits['c'] * q_c) - premium + v * pt * Reserves[j+1]
+        V_prev = v*(benefits['n'] * q_n + benefits['w'] * q_w + benefits['c'] * q_c + p * Reserves[j+1]) - premium
         Reserves[j] = V_prev
 
-    # print(Reserves)
     return Reserves
 
 
+def visualize_reserves_split(x, n, reserves_dict, save_path_prefix=None):
+    """
+    Rysuje panel 1×3 wykresów rezerw dla modeli A, B i C,
+    każdy wykres porównuje rezerwy Mężczyzn i Kobiet.
 
-def visualize_reserves(model_name, sex, reserves, save_path=None):
-    plt.figure(figsize=(10, 6))
-    plt.plot(range(len(reserves)), reserves, label='Men')
-    plt.xlabel('Years')
-    plt.ylabel('Reserve Value')
-    plt.title(f'Insurance Reserve Over Time by for {sex} in {model_name} Model')
-    plt.legend()
-    plt.grid(True)
+    Parametry:
+      x               - wiek początkowy (wykorzystywane na osi)
+      n               - liczba lat trwania (rozmiar rezerw to n+1)
+      reserves_dict   - słownik rezerw: {'A': {'M': arr, 'F': arr}, ...}
+      save_path_prefix- (opcjonalnie) prefiks ścieżki do zapisu
+    """
 
-    if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"Wykres zapisany do: {save_path}")
+    models = ['A', 'B', 'C']
+    sexes = ['M', 'F']
+    styles = {'M': '-', 'F': '--'}
+    labels = {'M': 'Mężczyźni', 'F': 'Kobiety'}
 
+    years = np.arange(n + 1)  # od 0 do n
+
+    # Stwórz panel 1×3
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
+    for i, model in enumerate(models):
+        ax = axes[i]
+        for s in sexes:
+            res = reserves_dict[model][s]
+            ax.plot(years, res, styles[s], lw=2, label=labels[s])
+        ax.set_title(f'Model {model} – rezerwy')
+        ax.set_xlabel('Lata od rozpoczęcia')
+        if i == 0:
+            ax.set_ylabel('Wartość rezerwy')
+        ax.grid(True)
+        ax.legend()
+    plt.tight_layout()
+
+    if save_path_prefix:
+        path = f"{save_path_prefix}_reserves_panel.png"
+        fig.savefig(path, dpi=300, bbox_inches='tight')
+        print(f'Zapisano panel rezerw do: {path}')
     plt.show()
 
 def calculate_risk_premium(model, sex, x, n, benefits, proportions, params, reserves, ttz_data=None):
@@ -451,32 +471,218 @@ def calculate_risk_premium(model, sex, x, n, benefits, proportions, params, rese
             q_n = death_prob_A_year(0, mu, proportions['n'])
             q_w = death_prob_A_year(0, mu, proportions['w'])
             q_c = death_prob_A_year(0, mu, proportions['c'])
-            # prawdopodobieństwo przeżycia roku przez x+j latka
-            pt = 1 - q_n - q_w - q_c
-            # print(pt)
+
         elif model == 'B':
             model_params = params[sex]['B']
             # Prawdopodobieństwo śmierci x+j latka w ciągu roku z poszczególnych przyczyn
             q_n = death_prob_B_year(0, x+j, model_params, proportions['n'])
             q_w = death_prob_B_year(0, x+j, model_params, proportions['w'])
             q_c = death_prob_B_year(0, x+j, model_params, proportions['c'])
-            # prawdopodobieństwo przeżycia roku przez x+j latka
-            pt = 1 - q_n - q_w - q_c
-            # print(pt)
+
 
         elif model == 'C':
             # Prawdopodobieństwo śmierci x+j latka w ciągu roku z poszczególnych przyczyn
             q_n = death_prob_C_year(0, x+j, ttz_data, proportions['n'])
             q_w = death_prob_C_year(0, x+j, ttz_data, proportions['w'])
             q_c = death_prob_C_year(0, x+j, ttz_data, proportions['c'])
-            # prawdopodobieństwo przeżycia roku przez x+j latka
-            pt = 1 - q_n - q_w - q_c
-    for k in range(0, len(reserves)):
-        risk_premium_values.append(v*(benefits['n'] * q_n + benefits['w'] * q_w + benefits['c'] * q_c - reserves[k+1] * (q_n+q_w+q_c) ))
+
+        risk_premium_values.append(v*(benefits['n'] * q_n + benefits['w'] * q_w + benefits['c'] * q_c - reserves[j+1] * (q_n+q_w+q_c) ))
     return risk_premium_values
 
 def calculate_savings_premium(premium, risk_premium_value):
     return premium - risk_premium_value
 
+def visualize_premiums_split(x, n, benefits, proportions, params, reserves_dict, ttz_data=None, save_path_prefix=None):
+    """
+    Rysuje dwa panele 1×3:
+      1) Roczne wartości składki ryzyka (risk premium) dla modeli A, B, C
+         w panelu rosnącym j (okres od 0 do n-1)
+      2) Roczne wartości składki oszczędności (savings premium)
 
+    Parametry:
+      x               - wiek początkowy
+      n               - liczba lat trwania
+      benefits        - słownik wypłat {'n','w','c'}
+      proportions     - słownik proporcji śmiertelności {'n','w','c'}
+      params          - słownik parametrów modeli z kluczami 'M' i 'F'
+      reserves_dict   - słownik rezerw: {'A': reserves_A, 'B': reserves_B, 'C': reserves_C}
+                        gdzie reserves_* to tablica długości n+1
+      ttz_data        - (opcjonalnie) dane TTŻ dla modelu C
+      save_path_prefix- prefiks ścieżki do zapisu wykresów
+    """
+    models = ['A', 'B', 'C']
+    sexes = ['M', 'F']
+    styles = {'M': '-', 'F': '--'}
+    labels = {'M': 'Mężczyźni', 'F': 'Kobiety'}
+
+    years = np.arange(n)
+
+    # oblicz risk i savings
+    risk = {model: {s: [] for s in sexes} for model in models}
+    save = {model: {s: [] for s in sexes} for model in models}
+
+    for model in models:
+        for s in sexes:
+            # podajemy DataFrame tylko do modelu C:
+            df_ttż = ttz_data[s] if (model == 'C' and ttz_data is not None) else None
+
+            # obliczamy ryzyko raz (to zwraca listę długości n)
+            risk_vals = calculate_risk_premium(
+                model, s, x, n, benefits, proportions, params, reserves_dict[model][s], df_ttż
+            )
+            risk[model][s] = risk_vals
+
+            # obliczamy składkę jednorazowo:
+            prem = calculate_premium(
+                model, s, x, n, benefits, proportions, params, df_ttż
+            )[0]
+            # i składkę oszczędności jako różnicę:
+            save[model][s] = calculate_savings_premium(prem, risk_vals)
+
+    # Panel 1: risk premium
+    fig1, axes1 = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
+    for i, model in enumerate(models):
+        ax = axes1[i]
+        for s in sexes:
+            ax.plot(years, risk[model][s], styles[s], lw=2, label=labels[s])
+        ax.set_title(f'Model {model} – składka ryzyka')
+        ax.set_xlabel('Lata od rozpoczęcia')
+        if i == 0:
+            ax.set_ylabel('Risk Premium')
+        ax.grid(True)
+        ax.legend()
+    plt.tight_layout()
+    if save_path_prefix:
+        p1 = f"{save_path_prefix}_risk_panel.png"
+        fig1.savefig(p1, dpi=300, bbox_inches='tight')
+        print(f'Zapisano panel składek ryzyka do: {p1}')
+
+    # Panel 2: savings premium
+    fig2, axes2 = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
+    for i, model in enumerate(models):
+        ax = axes2[i]
+        for s in sexes:
+            ax.plot(years, save[model][s], styles[s], lw=2, label=labels[s])
+        ax.set_title(f'Model {model} – składka oszczędności')
+        ax.set_xlabel('Lata od rozpoczęcia')
+        if i == 0:
+            ax.set_ylabel('Savings Premium')
+        ax.grid(True)
+        ax.legend()
+    plt.tight_layout()
+    if save_path_prefix:
+        p2 = f"{save_path_prefix}_savings_panel.png"
+        fig2.savefig(p2, dpi=300, bbox_inches='tight')
+        print(f'Zapisano panel składek oszczędności do: {p2}')
+
+    plt.show()
+
+def build_reserves_dict(x, n, benefits, proportions, params, ttz_data=None):
+    """
+    Zwraca słownik rezerw:
+      {'A': {'M': reserves_AM, 'F': reserves_AF},
+       'B': {'M': reserves_BM, 'F': reserves_BF},
+       'C': {'M': reserves_CM, 'F': reserves_CF}}
+    gdzie dla modelu C wykorzystujemy osobne DataFrame'y z ttz_data['M'] i ttz_data['F'].
+    """
+    reserves_dict = {'A': {}, 'B': {}, 'C': {}}
+    sexes = ['M', 'F']
+
+    for model in ['A', 'B', 'C']:
+        for s in sexes:
+            # wybierz dane TTŻ tylko dla modelu C:
+            df_ttż = ttz_data[s] if (model == 'C' and ttz_data is not None) else None
+
+            # oblicz składkę (potrzebna do rezerw)
+            premium, _, _ = calculate_premium(
+                model, s, x, n, benefits, proportions, params, df_ttż
+            )
+
+            # oblicz rezerwy
+            reserves = calculate_reserves(
+                model, s, x, n, benefits, premium, proportions, params, df_ttż
+            )
+
+            reserves_dict[model][s] = reserves
+
+    return reserves_dict
+
+def visualize_death_probs(x, n, ttz_data, params, proportions, save_path=None):
+    """
+    Rysuje dwa pliki:
+      1) Panel 1×3 rocznych prawdopodobieństw q_j dla modeli A, B, C
+      2) Panel 1×3 skumulowanych prawdopodobieństw Q_j
+    Każdy panel porównuje płcie.
+
+    Parametry:
+      x               - wiek początkowy
+      n               - liczba lat do przeanalizowania
+      ttz_data        - słownik TTŻ 2023: {'M': df_m, 'F': df_f}
+      params          - słownik parametrów modeli z kluczami 'M' i 'F'
+      proportions     - słownik proporcji śmiertelności {'n','w','c'}
+      save_path_prefix- (opcjonalnie) prefiks ścieżki do zapisu (bez rozszerzenia)
+    """
+
+    models = ['A', 'B', 'C']
+    sexes = ['M', 'F']
+    styles = {'M': '-', 'F': '--'}
+    labels = {'M': 'Mężczyźni', 'F': 'Kobiety'}
+
+    years = np.arange(n)
+    # oblicz q i Q
+    q = {model: {s: [] for s in sexes} for model in models}
+    Q = {model: {s: None for s in sexes} for model in models}
+    for model in models:
+        for s in sexes:
+            df = ttz_data[s]
+            arr = []
+            for j in years:
+                if model == 'A':
+                    mu = params[s]['A']['mu']
+                    val = sum(death_prob_A_year(j, mu, proportions[c]) for c in proportions)
+                elif model == 'B':
+                    pB = params[s]['B']
+                    val = sum(death_prob_B_year(j, x, pB, proportions[c]) for c in proportions)
+                else:
+                    val = sum(death_prob_C_year(j, x, df, proportions[c]) for c in proportions)
+                arr.append(val)
+            q[model][s] = np.array(arr)
+            Q[model][s] = np.cumsum(arr)
+    # Panel 1: roczne prawdopodobienstwa
+    fig1, axes1 = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
+    for i, model in enumerate(models):
+        ax = axes1[i]
+        for s in sexes:
+            ax.plot(years, q[model][s], styles[s], lw=2, label=labels[s])
+        ax.set_title(f'Model {model} – q_j')
+        ax.set_xlabel('Lata od rozpoczęcia')
+        if i == 0:
+            ax.set_ylabel('q_j')
+        ax.grid(True)
+        ax.legend()
+    plt.tight_layout()
+    if save_path:
+        path1 = f"{save_path}_q_panel.png"
+        fig1.savefig(path1, dpi=300, bbox_inches='tight')
+        print(f'Zapisano panel q_j do: {path1}')
+
+    # Panel 2: skumulowane prawdopodobienstwa
+    fig2, axes2 = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
+    for i, model in enumerate(models):
+        ax = axes2[i]
+        for s in sexes:
+            ax.plot(years, Q[model][s], styles[s], lw=2, label=labels[s])
+        ax.set_title(f'Model {model} – Q_j')
+        ax.set_xlabel('Lata od rozpoczęcia')
+        if i == 0:
+            ax.set_ylabel('Q_j')
+        ax.grid(True)
+        ax.legend()
+    plt.tight_layout()
+    if save_path:
+        path2 = f"{save_path}_cumulative_q_panel.png"
+        fig2.savefig(path2, dpi=300, bbox_inches='tight')
+        print(f'Zapisano panel Q_j do: {path2}')
+
+    plt.show()
 
