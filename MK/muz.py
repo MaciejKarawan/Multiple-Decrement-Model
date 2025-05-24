@@ -591,16 +591,16 @@ def build_reserves_dict(x, n, benefits, proportions, params, ttz_data=None):
     for model in ['A', 'B', 'C']:
         for s in sexes:
             # wybierz dane TTŻ tylko dla modelu C:
-            df_ttż = ttz_data[s] if (model == 'C' and ttz_data is not None) else None
+            df_ttz = ttz_data[s] if (model == 'C' and ttz_data is not None) else None
 
             # oblicz składkę (potrzebna do rezerw)
             premium, _, _ = calculate_premium(
-                model, s, x, n, benefits, proportions, params, df_ttż
+                model, s, x, n, benefits, proportions, params, df_ttz
             )
 
             # oblicz rezerwy
             reserves = calculate_reserves(
-                model, s, x, n, benefits, premium, proportions, params, df_ttż
+                model, s, x, n, benefits, premium, proportions, params, df_ttz
             )
 
             reserves_dict[model][s] = reserves

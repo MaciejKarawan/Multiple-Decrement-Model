@@ -32,17 +32,31 @@ def part1():
     #visualize_models(data_m, params_m, "mężczyźni", save_path="dopasowanie_modeli_mezczyzni.png")
     #visualize_models(data_f, params_f, "kobiety", save_path="dopasowanie_modeli_kobiety.png")
 
+    # Przykładowe przedziały wiekowe dla mężczyzn
+    male_age_ranges = [
+        (25, 55, "25 - 55"),
+        (20, 60, "20 - 60"),
+        (15, 65, "15 - 65"),
+    ]
+
+    # Estymacja parametru mu dla wybranego przedziału
+    mu_m = estimate_mu_on_interval(data_m, (25, 55), "mężczyzn")
+    mu_f = estimate_mu_on_interval(data_m, (25, 55), "kobiety")
+
+    # Wizualizacja wielu fitów
+    visualize_multi_fits(data_m, male_age_ranges, "mężczyźni", save_path="multi_fits_model_A_mezczyzni.png")
+    visualize_multi_fits(data_f, male_age_ranges, "kobiety", save_path="multi_fits_model_A_kobiety.png")
 
     # Parametry modeli śmiertelności skalibrowane na podstawie TTŻ 2023
     global params
 
     params = {
         'M': {
-            'A': {'mu': params_m['A']['mu']},
+            'A': {'mu': mu_m},
             'B': {'A': params_m['B']['A'], 'B': params_m['B']['B'], 'c': params_m['B']['c']}
         },
         'F': {
-            'A': {'mu': params_f['A']['mu']},
+            'A': {'mu': mu_f},
             'B': {'A': params_f['B']['A'], 'B': params_f['B']['B'], 'c': params_f['B']['c']}
         }
     }
@@ -94,7 +108,7 @@ def part2():
             }
 
     # Wyświetlenie wyników
-    print("Wysokość składki dla ubezpieczenia na życie dla 25-latków na okres 30 lat")
+    print("\nWysokość składki dla ubezpieczenia na życie dla 25-latków na okres 30 lat")
     print("=" * 70)
     print(f"Stopa procentowa: {i*100}%")
     print(f"Wypłaty: śmierć naturalna - {benefits['n']} zł, wypadek - {benefits['w']} zł, choroba - {benefits['c']} zł")
@@ -148,19 +162,7 @@ def part2():
 
     print("\nWyniki zapisano do pliku 'wyniki_skladek_ABC.txt'")
 
-    # Przykładowe przedziały wiekowe dla mężczyzn
-    male_age_ranges = [
-        (25, 55, "25 - 55"),
-        (20, 60, "20 - 60"),
-        (15, 65, "15 - 65"),
-    ]
 
-    # Estymacja parametru mu dla wybranego przedziału
-    mu = estimate_mu_on_interval(data_m, (25, 55), "mężczyzn")
-    print(f"Estymowany parametr μ dla przedziału (25 - 55): {mu:.8f}")
-
-    # Wizualizacja wielu fitów
-    visualize_multi_fits(data_m, male_age_ranges, "mężczyźni", save_path="multi_fits_model_A_mezczyzni.png")
 
 if __name__ == '__main__':
     part1()
