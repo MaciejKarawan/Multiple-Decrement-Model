@@ -1,0 +1,38 @@
+[
+  {
+    "old": "MK/code",
+    "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+    "identical_content_at": [
+      "archive/original_code_placeholder"
+    ],
+    "action": "preserved-or-consolidated"
+  },
+  {
+    "old": "MK/main.py",
+    "sha256": "ef3dccada605d944c0f509cc96a69280f1d948eba6e6d5976d97478c2c32a8ae",
+    "identical_content_at": [],
+    "action": "adapted-source/documentation"
+  },
+  {
+    "old": "MK/muz.py",
+    "sha256": "236839232db3837706c6dfb49637cb18327fa6ae51ef61d15f88508c822e2856",
+    "identical_content_at": [],
+    "action": "adapted-source/documentation"
+  },
+  {
+    "old": "MK/ttz2023.xlsx",
+    "sha256": "357bddfb834655ea5792fcd3eb9c09dcb7a7302612148077c77ed029f76d9a0f",
+    "identical_content_at": [
+      "data/raw/ttz2023.xlsx"
+    ],
+    "action": "preserved-or-consolidated"
+  },
+  {
+    "old": "README.md",
+    "sha256": "374d8533ebb9d9002c6f9ae64c9c46a7f9e797b01a10ed173550c8984b1472e6",
+    "identical_content_at": [
+      "docs/import-readme.md"
+    ],
+    "action": "preserved-or-consolidated"
+  }
+]
