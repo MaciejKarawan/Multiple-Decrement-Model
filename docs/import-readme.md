@@ -1,1 +1,0 @@
-# Multiple-Decrement-Model
